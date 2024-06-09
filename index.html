@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+  <title>Голосовые заметки</title>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <h1>Голосовые заметки</h1>
+
+  <div id="container">
+    <button id="recordButton">Начать запись</button>
+    <div id="note-text" placeholder="Ваша заметка..."></div>
+
+    <div id="reminder-settings">
+      <label for="reminder-time">Напомнить в:</label>
+      <input type="datetime-local" id="reminder-time">
+      <button id="setReminder">Установить напоминание</button>
+    </div>
+  </div>
+
+  <script>
+    const recordButton = document.getElementById('recordButton');
+const textarea = document.getElementById('textarea');
+
+let isRecording = false;
+
+recordButton.addEventListener('click', () => {
+  if (!isRecording) {
+    startRecording();
+  } else {
+    stopRecording();
+  }
+});
+
+function startRecording() {
+  recordButton.textContent = 'Остановить';
+  isRecording = true;
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const recorder = new MediaRecorder(stream);
+        const chunks = [];
+
+        recorder.ondataavailable = (event) => {
+          chunks.push(event.data);
+        };
+
+        recorder.start();
+
+        recordButton.addEventListener('click', stopRecording);
+      })
+      .catch(error => {
+        console.error('Не удалось получить доступ к микрофону:', error);
+      });
+  } else {
+    console.error('getUserMedia не поддерживается');
+  }
+}
+
+function stopRecording() {
+  recordButton.textContent = 'Записать';
+  isRecording = false;
+
+  if (recorder) {
+    recorder.stop();
+
+    const blob = new Blob(chunks, { type: 'audio/webm' });
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      textarea.value = event.target.result;
+    };
+
+    reader.readAsDataURL(blob);
+
+    chunks = [];
+    recorder = null;
+  }
+}
+  </script>
+</body>
+</html>
